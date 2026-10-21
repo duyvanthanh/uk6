@@ -1,6 +1,6 @@
 {
-  "name": "uk6",
-  "version": "0.3.38",
+  "name": "@duy247/uk6",
+  "version": "0.1.0",
   "description": "k6 load-testing framework, script bundler, runner, and dashboards.",
   "type": "commonjs",
   "main": "dist/cjs/src/index.js",
@@ -53,7 +53,8 @@
     "test": "npm run build && node --test dist/cjs/tests/*.test.js",
     "k6:run": "node dist/cjs/src/k6-tools/run.js",
     "k6:run-distributed-listener": "node dist/cjs/src/k6-tools/distributed-listener.js",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test",
+    "prepare": "npm run build"
   },
   "keywords": [
     "k6",
