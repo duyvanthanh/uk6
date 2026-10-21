@@ -8,7 +8,7 @@ import * as fs from 'node:fs';
 
 export function resolveK6Path(mode: string, projectRoot: any) {
 
-    const projectK6Path = path.resolve(projectRoot, 'k6', 'k6.exe');
+    const projectK6Path = path.resolve(projectRoot, 'k6', process.platform === 'win32' ? 'k6.exe' : 'k6');
 
 
 

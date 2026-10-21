@@ -662,6 +662,19 @@ async function bundleWithRollup(
 
 ) {
 
+  // Capture staged inputs before Rollup yields so cleanup or another build cannot
+  // remove files while this build is reading its module graph.
+  const stagedFiles = new Map<string, Buffer>();
+  const buildRoot = path.join(process.cwd(), ".k6-build");
+  function snapshot(dir: string) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) snapshot(file);
+      else if (entry.isFile()) stagedFiles.set(file, fs.readFileSync(file));
+    }
+  }
+  snapshot(buildRoot);
+
   const outDir = path.dirname(entryFile);
 
   const baseName = path.basename(entryFile, path.extname(entryFile));
@@ -693,6 +706,20 @@ async function bundleWithRollup(
       external: (id) => /^k6(\/.*)?$/.test(id),
 
       plugins: [
+        {
+          name: "uk6-staged-inputs",
+          resolveId(source, importer) {
+            if (!path.isAbsolute(source) && !source.startsWith(".")) return null;
+            const base = path.resolve(importer ? path.dirname(importer) : buildRoot, source);
+            for (const candidate of [base, `${base}.js`, path.join(base, "index.js")]) {
+              if (stagedFiles.has(candidate)) return candidate;
+            }
+            return null;
+          },
+          load(id) {
+            return stagedFiles.has(id) ? stagedFiles.get(id)!.toString("utf8") : null;
+          },
+        },
 
         {
 
@@ -848,6 +875,11 @@ async function bundleWithRollup(
 
 
 
+    // Keep the staged sources available alongside the resulting bundle.
+    for (const [file, contents] of stagedFiles) {
+      withFsRetry(() => fs.mkdirSync(path.dirname(file), { recursive: true }));
+      withFsRetry(() => fs.writeFileSync(file, contents));
+    }
     await bundle.write({
 
       file: outFile,

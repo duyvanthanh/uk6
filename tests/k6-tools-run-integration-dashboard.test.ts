@@ -1,3 +1,4 @@
+import { writeK6Stub, logEventCode } from "./_k6-stub.js";
 /**
 
  * Test tích hợp phía Node cho k6-tools, không cần binary k6 thật.
@@ -95,19 +96,15 @@ test("k6-tools: runner sinh dashboard bằng binary k6 giả lập", async () =>
 
 
 
-    const stubCmd = `@echo off\r
-setlocal\r
-echo time^="2026-01-01T00:00:00.000Z" level^=info msg^="{\\\"type\\\":\\\"flow_step_call\\\",\\\"stepName\\\":\\\"s1\\\",\\\"stepIndex\\\":0,\\\"method\\\":\\\"GET\\\",\\\"url\\\":\\\"http://x/ok\\\",\\\"tags\\\":{\\\"endpoint\\\":\\\"/ok\\\",\\\"method\\\":\\\"GET\\\"},\\\"response\\\":{\\\"status\\\":200,\\\"timings\\\":{\\\"duration\\\":12.3}},\\\"checks\\\":{\\\"status is 200\\\":true}}" source^=console\r
-echo time^="2026-01-01T00:00:01.000Z" level^=error msg^="{\\\"type\\\":\\\"flow_step_error\\\",\\\"stepName\\\":\\\"s2\\\",\\\"stepIndex\\\":1,\\\"method\\\":\\\"POST\\\",\\\"url\\\":\\\"http://x/fail\\\",\\\"tags\\\":{\\\"endpoint\\\":\\\"/fail\\\",\\\"method\\\":\\\"POST\\\"},\\\"response\\\":{\\\"status\\\":500,\\\"timings\\\":{\\\"duration\\\":45.6}},\\\"checks\\\":{\\\"status is 200\\\":false}}" source^=console\r
-exit /b 0\r
-`;
-    writeFile(path.join(stubDir, "k6.cmd"), stubCmd);
+    writeK6Stub(stubDir,
+      logEventCode({"type": "flow_step_call", "stepName": "s1", "stepIndex": 0, "method": "GET", "url": "http://x/ok", "tags": {"endpoint": "/ok", "method": "GET"}, "response": {"status": 200, "timings": {"duration": 12.3}}, "checks": {"status is 200": true}}, "info", 0) +
+      logEventCode({"type": "flow_step_error", "stepName": "s2", "stepIndex": 1, "method": "POST", "url": "http://x/fail", "tags": {"endpoint": "/fail", "method": "POST"}, "response": {"status": 500, "timings": {"duration": 45.6}}, "checks": {"status is 200": false}}, "error", 1));
 
 
 
     const env = {
       ...process.env,
-      PATH: `${stubDir};${process.env.PATH || ""}`,
+      PATH: `${stubDir}${path.delimiter}${process.env.PATH || ""}`,
       UK6_BROWSER_OPEN_LOGFILE: path.join(projectDir, "browser-opens.log"),
     };
 

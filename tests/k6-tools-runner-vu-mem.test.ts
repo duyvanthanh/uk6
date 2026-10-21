@@ -1,3 +1,4 @@
+import { writeK6Launcher } from "./_k6-stub.js";
 import test from "node:test";
 
 import assert from "node:assert/strict";
@@ -72,7 +73,7 @@ if (summaryArg) {
 
   );
 
-  writeFile(path.join(stubDir, "k6.cmd"), `@echo off\r\nnode "${stubJs.replace(/\\/g, "\\\\")}" "${captureFile.replace(/\\/g, "\\\\")}" %*\r\n`);
+  writeK6Launcher(stubDir, stubJs, [captureFile]);
 
   return stubDir;
 
@@ -98,7 +99,7 @@ test("k6-tools: --vu-mem bổ sung đúng cờ summary export cho k6", () => {
 
     const stubDir = createNodeStubK6(projectDir, captureFile);
 
-    const env = { ...process.env, PATH: `${stubDir};${process.env.PATH || ""}` };
+    const env = { ...process.env, PATH: `${stubDir}${path.delimiter}${process.env.PATH || ""}` };
 
 
 

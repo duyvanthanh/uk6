@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { buildK6SpawnSpec } from '../run/k6/buildSpawnSpec.js';
 
 
 
@@ -56,7 +57,10 @@ export function runK6Inspect(params: RunK6InspectParams): any {
 
 
 
-    const res = spawnSync(params.k6Path, args, {
+    const spec = buildK6SpawnSpec(params.k6Path, args);
+    const res = spawnSync(spec.command, spec.args, {
+
+        ...spec.options,
 
         encoding: 'utf8',
 

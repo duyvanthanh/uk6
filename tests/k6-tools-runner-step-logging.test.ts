@@ -1,3 +1,4 @@
+import { writeK6Stub, logEventCode } from "./_k6-stub.js";
 import test from "node:test";
 
 import assert from "node:assert/strict";
@@ -61,15 +62,9 @@ function writeFile(p: string, content: string) {
 function createStubK6(projectDir: string, modeFile: string, emitDashboardLog: boolean) {
   const stubDir = path.join(projectDir, "stub-bin");
   fs.mkdirSync(stubDir, { recursive: true });
-  const dashboardLogBlock = emitDashboardLog
-    ? `echo time^="2026-01-01T00:00:00.000Z" level^=info msg^="{\\\"type\\\":\\\"flow_step_call\\\",\\\"stepName\\\":\\\"s1\\\",\\\"stepIndex\\\":0,\\\"method\\\":\\\"GET\\\",\\\"url\\\":\\\"http://x/ok\\\",\\\"tags\\\":{\\\"endpoint\\\":\\\"/ok\\\",\\\"method\\\":\\\"GET\\\"},\\\"response\\\":{\\\"status\\\":200,\\\"timings\\\":{\\\"duration\\\":12.3}},\\\"checks\\\":{\\\"status is 200\\\":true}}" source^=console\r\n`
-    : "";
-  const stubCmd = `@echo off\r
-setlocal\r
-echo %UK6_STEP_LOGGING%^|%UK6_EVENT_LOG_MODE%>"${modeFile.replace(/\\/g, "\\\\")}"\r
-${dashboardLogBlock}exit /b 0\r
-`;
-  writeFile(path.join(stubDir, "k6.cmd"), stubCmd);
+  writeK6Stub(stubDir,
+    `require("node:fs").writeFileSync(${JSON.stringify(modeFile)}, process.env.UK6_STEP_LOGGING + "|" + process.env.UK6_EVENT_LOG_MODE);\n` +
+    (emitDashboardLog ? logEventCode({"type": "flow_step_call", "stepName": "s1", "stepIndex": 0, "method": "GET", "url": "http://x/ok", "tags": {"endpoint": "/ok", "method": "GET"}, "response": {"status": 200, "timings": {"duration": 12.3}, "headers": {"content-type": "application/json"}, "body": "{\"ok\":true}"}, "checks": {"status is 200": true}}, "info", 0) : ""));
   return stubDir;
 }
 
@@ -94,7 +89,7 @@ test("k6-tools: runner mặc định chỉ log lỗi và chuyển sang full khi 
 
     const stubDirDefault = createStubK6(projectDir, modeDefaultFile, false);
 
-    const envDefault = { ...process.env, PATH: `${stubDirDefault};${process.env.PATH || ""}` };
+    const envDefault = { ...process.env, PATH: `${stubDirDefault}${path.delimiter}${process.env.PATH || ""}` };
 
     const defaultRun = spawnSync(process.execPath, [runJs, "tests/entry.js", "--k6=local"], {
       cwd: projectDir,
@@ -110,7 +105,7 @@ test("k6-tools: runner mặc định chỉ log lỗi và chuyển sang full khi 
 
     const envDashboard = {
       ...process.env,
-      PATH: `${stubDirDashboard};${process.env.PATH || ""}`,
+      PATH: `${stubDirDashboard}${path.delimiter}${process.env.PATH || ""}`,
       UK6_BROWSER_OPEN_LOGFILE: path.join(projectDir, "browser-opens.log"),
     };
     const dashboardRun = spawnSync(process.execPath, [runJs, "tests/entry.js", "--k6=local", "--dashboard=true"], {
@@ -123,7 +118,7 @@ test("k6-tools: runner mặc định chỉ log lỗi và chuyển sang full khi 
 
     const modeErrorFile = path.join(projectDir, "mode-error.txt");
     const stubDirError = createStubK6(projectDir, modeErrorFile, false);
-    const envError = { ...process.env, PATH: `${stubDirError};${process.env.PATH || ""}` };
+    const envError = { ...process.env, PATH: `${stubDirError}${path.delimiter}${process.env.PATH || ""}` };
     const errorRun = spawnSync(process.execPath, [runJs, "tests/entry.js", "--k6=local", "--error=true"], {
       cwd: projectDir,
       env: envError,

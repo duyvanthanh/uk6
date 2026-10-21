@@ -1,3 +1,4 @@
+import { writeK6Launcher } from "./_k6-stub.js";
 import test from "node:test";
 
 import assert from "node:assert/strict";
@@ -68,7 +69,7 @@ fs.writeFileSync("error_log.raw.json", "", "utf8");
 
   );
 
-  writeFile(path.join(stubDir, "k6.cmd"), `@echo off\r\nnode "${stubJs.replace(/\\/g, "\\\\")}" "${captureFile.replace(/\\/g, "\\\\")}" %*\r\n`);
+  writeK6Launcher(stubDir, stubJs, [captureFile]);
 
   return stubDir;
 
@@ -84,7 +85,7 @@ function runWithArgs(runJs: string, projectDir: string, extraArgs: string[], cap
 
     ...process.env,
 
-    PATH: `${stubDir};${process.env.PATH || ""}`,
+    PATH: `${stubDir}${path.delimiter}${process.env.PATH || ""}`,
 
     HTTP_PROXY: "http://proxy.local:8080",
 

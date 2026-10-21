@@ -1,3 +1,4 @@
+import { writeK6Stub, logEventCode } from "./_k6-stub.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -48,18 +49,14 @@ test("k6-tools: --error writes only failure entries without dashboard artifacts"
     const stubDir = path.join(projectDir, "stub-bin");
     fs.mkdirSync(stubDir, { recursive: true });
 
-    const stubCmd = `@echo off\r
-setlocal\r
-echo time^="2026-01-01T00:00:00.000Z" level^=info msg^="{\\\"type\\\":\\\"flow_step_call\\\",\\\"stepName\\\":\\\"s1\\\",\\\"stepIndex\\\":0,\\\"method\\\":\\\"GET\\\",\\\"url\\\":\\\"http://x/ok\\\",\\\"request\\\":{\\\"headers\\\":{\\\"Accept\\\":\\\"application/json\\\"},\\\"body\\\":null,\\\"params\\\":{}},\\\"tags\\\":{\\\"endpoint\\\":\\\"/ok\\\",\\\"method\\\":\\\"GET\\\"},\\\"response\\\":{\\\"status\\\":200,\\\"headers\\\":{\\\"content-type\\\":\\\"application/json\\\"},\\\"timings\\\":{\\\"duration\\\":12.3},\\\"body\\\":\\\"{\\\\\\\"ok\\\\\\\":true}\\\"},\\\"checks\\\":{\\\"status is 200\\\":true}}" source^=console\r
-echo time^="2026-01-01T00:00:01.000Z" level^=error msg^="{\\\"type\\\":\\\"flow_step_error\\\",\\\"stepName\\\":\\\"s2\\\",\\\"stepIndex\\\":1,\\\"method\\\":\\\"POST\\\",\\\"url\\\":\\\"http://x/fail\\\",\\\"request\\\":{\\\"headers\\\":{\\\"Content-Type\\\":\\\"application/json\\\"},\\\"body\\\":\\\"{\\\\\\\"foo\\\\\\\":1}\\\",\\\"params\\\":{}},\\\"tags\\\":{\\\"endpoint\\\":\\\"/fail\\\",\\\"method\\\":\\\"POST\\\"},\\\"response\\\":{\\\"status\\\":500,\\\"headers\\\":{\\\"content-type\\\":\\\"application/json\\\"},\\\"timings\\\":{\\\"duration\\\":45.6},\\\"body\\\":\\\"{\\\\\\\"error\\\\\\\":true}\\\"},\\\"checks\\\":{\\\"status is 200\\\":false}}" source^=console\r
-echo time^="2026-01-01T00:00:02.000Z" level^=error msg^="{\\\"type\\\":\\\"flow_step_exception\\\",\\\"stepName\\\":\\\"s3\\\",\\\"stepIndex\\\":2,\\\"error\\\":{\\\"message\\\":\\\"boom\\\"}}" source^=console\r
-exit /b 0\r
-`;
-    writeFile(path.join(stubDir, "k6.cmd"), stubCmd);
+    writeK6Stub(stubDir,
+      logEventCode({"type": "flow_step_call", "stepName": "s1", "stepIndex": 0, "method": "GET", "url": "http://x/ok", "tags": {"endpoint": "/ok", "method": "GET"}, "response": {"status": 200, "timings": {"duration": 12.3}, "headers": {"content-type": "application/json"}, "body": "{\"ok\":true}"}, "checks": {"status is 200": true}, "request": {"headers": {"Accept": "application/json"}, "body": null, "params": {}}}, "info", 0) +
+      logEventCode({"type": "flow_step_error", "stepName": "s2", "stepIndex": 1, "method": "POST", "url": "http://x/fail", "tags": {"endpoint": "/fail", "method": "POST"}, "response": {"status": 500, "timings": {"duration": 45.6}, "headers": {"content-type": "application/json"}, "body": "{\"error\":true}"}, "checks": {"status is 200": false}, "request": {"headers": {"Content-Type": "application/json"}, "body": "{\"foo\":1}", "params": {}}}, "error", 1) +
+      logEventCode({"type": "flow_step_exception", "stepName": "s3", "stepIndex": 2, "error": {"message": "boom"}}, "error", 2));
 
     const env = {
       ...process.env,
-      PATH: `${stubDir};${process.env.PATH || ""}`,
+      PATH: `${stubDir}${path.delimiter}${process.env.PATH || ""}`,
       UK6_BROWSER_OPEN_LOGFILE: path.join(projectDir, "browser-opens.log"),
     };
 
@@ -101,17 +98,13 @@ test("k6-tools: --error streams error_log.json before run exits", async () => {
     const stubDir = path.join(projectDir, "stub-bin");
     fs.mkdirSync(stubDir, { recursive: true });
 
-    const stubCmd = `@echo off\r
-setlocal\r
-echo time^="2026-01-01T00:00:01.000Z" level^=error msg^="{\\\"type\\\":\\\"flow_step_error\\\",\\\"stepName\\\":\\\"s2\\\",\\\"stepIndex\\\":1,\\\"method\\\":\\\"POST\\\",\\\"url\\\":\\\"http://x/fail\\\",\\\"request\\\":{\\\"headers\\\":{\\\"Content-Type\\\":\\\"application/json\\\"},\\\"body\\\":\\\"{\\\\\\\"foo\\\\\\\":1}\\\",\\\"params\\\":{}},\\\"tags\\\":{\\\"endpoint\\\":\\\"/fail\\\",\\\"method\\\":\\\"POST\\\"},\\\"response\\\":{\\\"status\\\":500,\\\"headers\\\":{\\\"content-type\\\":\\\"application/json\\\"},\\\"timings\\\":{\\\"duration\\\":45.6},\\\"body\\\":\\\"{\\\\\\\"error\\\\\\\":true}\\\"},\\\"checks\\\":{\\\"status is 200\\\":false}}" source^=console\r
-ping -n 6 127.0.0.1 >nul\r
-exit /b 0\r
-`;
-    writeFile(path.join(stubDir, "k6.cmd"), stubCmd);
+    writeK6Stub(stubDir,
+      logEventCode({"type": "flow_step_error", "stepName": "s2", "stepIndex": 1, "method": "POST", "url": "http://x/fail", "tags": {"endpoint": "/fail", "method": "POST"}, "response": {"status": 500, "timings": {"duration": 45.6}, "headers": {"content-type": "application/json"}, "body": "{\"error\":true}"}, "checks": {"status is 200": false}, "request": {"headers": {"Content-Type": "application/json"}, "body": "{\"foo\":1}", "params": {}}}, "error", 1) +
+      "setTimeout(() => {}, 5000);\n");
 
     const env = {
       ...process.env,
-      PATH: `${stubDir};${process.env.PATH || ""}`,
+      PATH: `${stubDir}${path.delimiter}${process.env.PATH || ""}`,
       UK6_BROWSER_OPEN_LOGFILE: path.join(projectDir, "browser-opens.log"),
     };
 

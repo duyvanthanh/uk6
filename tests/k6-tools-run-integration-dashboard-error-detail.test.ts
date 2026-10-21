@@ -1,3 +1,4 @@
+import { writeK6Launcher } from "./_k6-stub.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -30,16 +31,11 @@ test("k6-tools: dashboard mode keeps full detail for error events", () => {
       `console.log('time="2026-01-01T00:00:00.000Z" level=error msg="'+payload+'" source=console');\n`;
     writeFile(path.join(stubDir, "gen.js"), genJs);
 
-    const stubCmd = `@echo off\r
-setlocal\r
-node "${path.join(stubDir, "gen.js").replace(/\\/g, "\\\\")}"\r
-exit /b 0\r
-`;
-    writeFile(path.join(stubDir, "k6.cmd"), stubCmd);
+    writeK6Launcher(stubDir, path.join(stubDir, "gen.js"));
 
     const env = {
       ...process.env,
-      PATH: `${stubDir};${process.env.PATH || ""}`,
+      PATH: `${stubDir}${path.delimiter}${process.env.PATH || ""}`,
       UK6_BROWSER_OPEN_LOGFILE: path.join(projectDir, "browser-opens.log"),
     };
 
