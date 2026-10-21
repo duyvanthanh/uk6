@@ -1,0 +1,78 @@
+{
+  "name": "uk6",
+  "version": "0.3.38",
+  "description": "k6 load-testing framework, script bundler, runner, and dashboards.",
+  "type": "commonjs",
+  "main": "dist/cjs/src/index.js",
+  "types": "dist/cjs/src/index.d.ts",
+  "bin": {
+    "uk6": "dist/cjs/src/k6-tools/cli.js",
+    "uk6-distributed-listener": "dist/cjs/src/k6-tools/distributed-listener-cli.js"
+  },
+  "files": [
+    "dist/cjs/src",
+    "dist/esm/src",
+    "dist/esm/package.json",
+    "README.md",
+    "docs"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/src/index.d.ts",
+      "require": "./dist/cjs/src/index.js",
+      "import": "./dist/esm/src/index.js"
+    },
+    "./core": {
+      "types": "./dist/cjs/src/core/index.d.ts",
+      "require": "./dist/cjs/src/core/index.js",
+      "import": "./dist/esm/src/core/index.js"
+    },
+    "./k6": {
+      "types": "./dist/cjs/src/k6/index.d.ts",
+      "require": "./dist/cjs/src/k6/index.js",
+      "import": "./dist/esm/src/k6/index.js"
+    },
+    "./k6-framework": {
+      "types": "./dist/cjs/src/k6-framework/index.d.ts",
+      "require": "./dist/cjs/src/k6-framework/index.js",
+      "import": "./dist/esm/src/k6-framework/index.js"
+    },
+    "./k6-tools": {
+      "types": "./dist/cjs/src/k6-tools/index.d.ts",
+      "require": "./dist/cjs/src/k6-tools/index.js",
+      "import": "./dist/esm/src/k6-tools/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && npm run build:cjs && npm run build:esm && npm run build:esm-package",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:esm-package": "node -e \"require('node:fs').writeFileSync('dist/esm/package.json', JSON.stringify({type: 'module'}) + '\\n')\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/cjs/tests/*.test.js",
+    "k6:run": "node dist/cjs/src/k6-tools/run.js",
+    "k6:run-distributed-listener": "node dist/cjs/src/k6-tools/distributed-listener.js",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "k6",
+    "load-testing",
+    "performance",
+    "testing"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "rollup": "^2.79.1"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/k6": "^0.52.0",
+    "@types/node": "^24.9.1",
+    "typescript": "^5.9.3"
+  }
+}

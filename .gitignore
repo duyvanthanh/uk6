@@ -1,0 +1,14 @@
+node_modules/
+
+dist/
+
+*.tgz
+
+npm-debug.log*
+
+.idea/
+
+test-results/
+
+.k6-build/
+test-results.log
